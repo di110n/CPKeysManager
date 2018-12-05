@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 
 namespace CPKeysManager
@@ -17,7 +19,7 @@ namespace CPKeysManager
     {
 
         public Dictionary<string, string> usersList = new Dictionary<string, string>();
-        //public Dictionary<string, string> keyList = new Dictionary<string, string>();
+        //public ListBox.ObjectCollection SelectedUsers;
 
         public Form1()
         {
@@ -113,7 +115,14 @@ namespace CPKeysManager
 
         private void uidToStatus()
         {
-            tssl1.Text = usersList[LBUsersList.Text];
+            try
+            {
+                tssl1.Text = usersList[LBUsersList.Text];
+            }
+            catch
+            {
+                //
+            }
         }
 
         private string[] getUsersKeys(string usersUid)
@@ -139,6 +148,24 @@ namespace CPKeysManager
             CLBKeys.Items.AddRange(getUsersKeys(usersUid));
         }
 
+        private bool checkIfKeyIsExistsHKLM(string keyPath)
+        {
+            bool result = false;
+
+            if(Registry.LocalMachine.OpenSubKey(keyPath) != null)
+            {
+                result = true;
+            }
+            else
+            {
+                result = false;
+            }
+
+            return result;
+        }
+
+        /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
+
         private void Form1_Load(object sender, EventArgs e)
         {
             formReload();
@@ -147,7 +174,15 @@ namespace CPKeysManager
         private void LBUsersList_SelectedIndexChanged(object sender, EventArgs e)
         {
             uidToStatus();
-            fillKeysList(usersList[LBUsersList.Text]);
+            try
+            {
+                fillKeysList(usersList[LBUsersList.Text]);
+                tbLog.AppendText($"{CPKMStrings.txtMsgSourceUser} {LBUsersList.Text}...\r\n");
+            }
+            catch
+            {
+                //
+            }
         }
 
         private void mbUpdate_Click(object sender, EventArgs e)
@@ -200,9 +235,7 @@ namespace CPKeysManager
 
             for (int i = 0; i < CLBKeys.Items.Count; i++)
             {
-                //string debuggerstr = CLBKeys.GetItemText(CLBKeys.Items[i]);
                 MatchCollection matches = Regex.Matches(CLBKeys.GetItemText(CLBKeys.Items[i]), ttbFilter.Text, RegexOptions.IgnoreCase);
-                //int debugint = matches.Count;
                 //if (CLBKeys.GetItemText(CLBKeys.Items[i]).ToUpper().Contains(ttbFilter.Text.ToUpper()))
                 if (matches.Count>0)
                 {
@@ -210,6 +243,130 @@ namespace CPKeysManager
                 }
             }
 
+        }
+
+        private void mbCopy_Click(object sender, EventArgs e)
+        {
+            if (CLBKeys.CheckedItems.Count <= 0)
+            {
+                tbLog.AppendText($"{CPKMStrings.txtErrNoKeysToAction}\r\n");
+                return;
+            }
+
+            Form frmSelectUsers = new SelectUsers(LBUsersList.Items,LBUsersList.SelectedIndex, CPKMStrings.txtMsgSelectUserToCopyKeys);
+            frmSelectUsers.StartPosition = FormStartPosition.CenterParent;
+            cpkmDataExchange.cpkmvSelectedUsers = null;
+            frmSelectUsers.ShowDialog(this);
+
+            if (cpkmDataExchange.cpkmvSelectedUsers == null)
+            {
+                tbLog.AppendText($"{CPKMStrings.txtErrNoUsersToCopyKeys}\r\n");
+                return;
+            }
+
+            /*while (cpkmDataExchange.cpkmvSelectedUsers.Count == 0)
+            {
+                //whatever
+                Thread.Sleep(100);
+            }*/
+            int i = 0;
+            string vUser = null;
+            string pUser = null;
+            string[] tUser = { };
+            string rArgs = null;
+            string uKeyPath = null;
+            string oKeyPath = null;
+            bool chkIfKeyEx = false;
+
+            try
+            {
+                foreach (var item in cpkmDataExchange.cpkmvSelectedUsers)
+                {
+                    if (item.ToString().IndexOf('@')<0)
+                    {
+                        tbLog.AppendText($"{CPKMStrings.txtUser} {item} {CPKMStrings.txtMsgNotSignedIn}\r\n");
+
+                        //here is copying code for NOT signed in users
+
+                        continue;
+                    }
+
+                    foreach (var ikey in CLBKeys.CheckedItems)
+                    {
+                        tUser = item.ToString().Split('@');
+                        vUser = $"{tUser[1]}\\{tUser[0]}";
+                        pUser = tUser[0];
+                        tbLog.AppendText($"{CPKMStrings.txtMsgCopyKeysForUser} {vUser} <-- {ikey}\r\n");
+                        uKeyPath = $"{CPKMConfig.baseCPKey}\\{usersList[item.ToString()]}\\{CPKMConfig.baseCPKKey}\\{ikey}";
+                        oKeyPath = $"{CPKMConfig.baseCPKey}\\{usersList[LBUsersList.Text]}\\{CPKMConfig.baseCPKKey}\\{ikey}";
+
+                        //here is copying code for signeb in users
+
+                        //Creating registry key for a container
+                        rArgs = $"/create /RU {vUser} /IT /TN keyCreateFor_{pUser} /TR \"reg.exe ADD \'HKLM\\{uKeyPath}\'\" /SC DAILY /F";
+                        System.Diagnostics.Process psSch = new System.Diagnostics.Process();
+                        psSch.StartInfo.FileName = CPKMConfig.pathSchtasks;
+                        psSch.StartInfo.Arguments = rArgs;
+                        psSch.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                        psSch.Start();
+                        psSch.WaitForExit();
+                        /*rArgs = $"/run /TN keyCreateFor_{pUser}";
+                        psSch.StartInfo.Arguments = rArgs;
+                        psSch.Start();
+                        psSch.WaitForExit();
+                        rArgs = $"/Delete /TN keyCreateFor_{pUser} /F";
+                        psSch.StartInfo.Arguments = rArgs;
+                        psSch.Start();
+                        psSch.WaitForExit();*/
+                        psSch.Dispose();
+                        ///////////////////////////
+
+                        //Checking if the key created at the previous step is exists
+                        chkIfKeyEx = false;
+                        chkIfKeyEx = checkIfKeyIsExistsHKLM(uKeyPath);
+                        if (!chkIfKeyEx)
+                        {
+                            //tbLog.AppendText($"{CPKMStrings.txtErrNoRegistryPath} {Registry.LocalMachine.Name}\\{uKeyPath}\r\n");
+                            //continue;
+                        }
+                        else if (checkIfKeyIsExistsHKLM(uKeyPath))
+                        {
+                            //tbLog.AppendText($"OK\r\n");
+                        }
+                        ///////////////////////////
+
+                        //Copying the container
+                        /*System.Diagnostics.Process psReg = new System.Diagnostics.Process();
+                        psReg.StartInfo.FileName = CPKMConfig.pathReg;
+                        rArgs = $"copy \"HKLM\\{oKeyPath}\" \"HKLM\\{uKeyPath}\" /s /f";
+                        psReg.StartInfo.Arguments = rArgs;
+                        psReg.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                        psReg.Start();
+                        psReg.WaitForExit();
+                        psReg.Dispose();*/
+                        ///////////////////////////
+                        
+                        
+                        //reg copy "HKLM\SOFTWARE\WOW6432Node\Crypto Pro\Settings\Users\S-1-5-21-908165884-950078525-27604
+                        //64006 - 1001\Keys\2018 - 01 - 15 12 - 09 - 38 ООО ВОСТСИБДОБЫЧА" "HKLM\SOFTWARE\WOW6432Node\Crypto Pro\Settings\Users\S - 1 - 5 - 21 - 908
+                        //165884 - 950078525 - 2760464006 - 1002\Keys\2018 - 01 - 15 12 - 09 - 38 ООО ВОСТСИБДОБЫЧА" /s /f
+                    }
+
+                    i++;
+                }
+                /*tbLog.AppendText("Запускаем блокнот\r\n");
+                System.Diagnostics.Process notepad = new System.Diagnostics.Process();
+                notepad.StartInfo.FileName = "notepad.exe";
+                notepad.StartInfo.Arguments = "";
+                notepad.Start();
+                notepad.WaitForExit();
+                notepad.Dispose();*/
+            }
+            finally
+            {
+                //
+            }
+            tbLog.AppendText($"{CPKMStrings.txtDone}\r\n");
         }
     }
 }
