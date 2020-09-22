@@ -29,8 +29,6 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            this.LBUsersList = new System.Windows.Forms.ListBox();
-            this.CLBKeys = new System.Windows.Forms.CheckedListBox();
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
             this.mbUpdate = new System.Windows.Forms.ToolStripMenuItem();
@@ -38,45 +36,34 @@
             this.tssl1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripDropDownButton2 = new System.Windows.Forms.ToolStripDropDownButton();
             this.mbCopy = new System.Windows.Forms.ToolStripMenuItem();
-            this.mbInstallCerts = new System.Windows.Forms.ToolStripMenuItem();
+            this.mbExport = new System.Windows.Forms.ToolStripMenuItem();
             this.mbSelectAll = new System.Windows.Forms.ToolStripMenuItem();
             this.mbFilter = new System.Windows.Forms.ToolStripMenuItem();
             this.ttbFilter = new System.Windows.Forms.ToolStripTextBox();
             this.mbSelectFilter = new System.Windows.Forms.ToolStripMenuItem();
             this.mbUnselectAll = new System.Windows.Forms.ToolStripMenuItem();
             this.mbDelete = new System.Windows.Forms.ToolStripMenuItem();
+            this.tssl2 = new System.Windows.Forms.ToolStripStatusLabel();
+            this.LBUsersList = new System.Windows.Forms.ListBox();
             this.tbLog = new System.Windows.Forms.TextBox();
+            this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
+            this.CLBKeys = new CPKeysManager.UserCheckedListBox();
+            this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
+            this.openLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
+            this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // LBUsersList
-            // 
-            this.LBUsersList.FormattingEnabled = true;
-            this.LBUsersList.Location = new System.Drawing.Point(12, 12);
-            this.LBUsersList.Name = "LBUsersList";
-            this.LBUsersList.ScrollAlwaysVisible = true;
-            this.LBUsersList.Size = new System.Drawing.Size(363, 303);
-            this.LBUsersList.TabIndex = 0;
-            this.LBUsersList.SelectedIndexChanged += new System.EventHandler(this.LBUsersList_SelectedIndexChanged);
-            // 
-            // CLBKeys
-            // 
-            this.CLBKeys.FormattingEnabled = true;
-            this.CLBKeys.Location = new System.Drawing.Point(381, 11);
-            this.CLBKeys.Name = "CLBKeys";
-            this.CLBKeys.ScrollAlwaysVisible = true;
-            this.CLBKeys.Size = new System.Drawing.Size(363, 304);
-            this.CLBKeys.TabIndex = 1;
             // 
             // statusStrip1
             // 
             this.statusStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.toolStripDropDownButton1,
             this.tssl1,
-            this.toolStripDropDownButton2});
+            this.toolStripDropDownButton2,
+            this.tssl2});
             this.statusStrip1.Location = new System.Drawing.Point(0, 389);
             this.statusStrip1.Name = "statusStrip1";
-            this.statusStrip1.Size = new System.Drawing.Size(754, 22);
+            this.statusStrip1.Size = new System.Drawing.Size(739, 22);
             this.statusStrip1.TabIndex = 2;
             this.statusStrip1.Text = "statusStrip1";
             // 
@@ -86,6 +73,7 @@
             this.toolStripDropDownButton1.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripDropDownButton1.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mbUpdate,
+            this.openLogToolStripMenuItem,
             this.mbOpenFilterContext});
             this.toolStripDropDownButton1.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton1.Image")));
             this.toolStripDropDownButton1.ImageTransparentColor = System.Drawing.Color.Magenta;
@@ -122,7 +110,7 @@
             this.toolStripDropDownButton2.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Text;
             this.toolStripDropDownButton2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mbCopy,
-            this.mbInstallCerts,
+            this.mbExport,
             this.mbSelectAll,
             this.mbFilter,
             this.mbUnselectAll,
@@ -141,12 +129,13 @@
             this.mbCopy.Text = "Копировать контейнеры";
             this.mbCopy.Click += new System.EventHandler(this.mbCopy_Click);
             // 
-            // mbInstallCerts
+            // mbExport
             // 
-            this.mbInstallCerts.Name = "mbInstallCerts";
-            this.mbInstallCerts.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.I)));
-            this.mbInstallCerts.Size = new System.Drawing.Size(274, 22);
-            this.mbInstallCerts.Text = "Установить сертификаты";
+            this.mbExport.Name = "mbExport";
+            this.mbExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
+            this.mbExport.Size = new System.Drawing.Size(274, 22);
+            this.mbExport.Text = "Экспорт контейнеров в файл";
+            this.mbExport.Click += new System.EventHandler(this.mbExport_Click);
             // 
             // mbSelectAll
             // 
@@ -191,44 +180,114 @@
             // 
             this.mbDelete.Name = "mbDelete";
             this.mbDelete.Size = new System.Drawing.Size(274, 22);
-            this.mbDelete.Text = "Удалить контейнеры и сертификаты";
+            this.mbDelete.Text = "Удалить отмеченные контейнеры";
+            this.mbDelete.Click += new System.EventHandler(this.mbDelete_Click);
+            // 
+            // tssl2
+            // 
+            this.tssl2.Name = "tssl2";
+            this.tssl2.Size = new System.Drawing.Size(115, 17);
+            this.tssl2.Text = "Выбрано ключей: 0";
+            // 
+            // LBUsersList
+            // 
+            this.LBUsersList.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.LBUsersList.FormattingEnabled = true;
+            this.LBUsersList.IntegralHeight = false;
+            this.LBUsersList.Location = new System.Drawing.Point(3, 3);
+            this.LBUsersList.Name = "LBUsersList";
+            this.LBUsersList.ScrollAlwaysVisible = true;
+            this.LBUsersList.Size = new System.Drawing.Size(363, 303);
+            this.LBUsersList.TabIndex = 3;
+            this.LBUsersList.SelectedIndexChanged += new System.EventHandler(this.LBUsersList_SelectedIndexChanged);
             // 
             // tbLog
             // 
-            this.tbLog.Location = new System.Drawing.Point(12, 321);
+            this.tableLayoutPanel1.SetColumnSpan(this.tbLog, 2);
+            this.tbLog.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tbLog.Location = new System.Drawing.Point(3, 312);
             this.tbLog.MaxLength = 327670;
             this.tbLog.Multiline = true;
             this.tbLog.Name = "tbLog";
             this.tbLog.ReadOnly = true;
             this.tbLog.ScrollBars = System.Windows.Forms.ScrollBars.Vertical;
-            this.tbLog.Size = new System.Drawing.Size(732, 65);
-            this.tbLog.TabIndex = 0;
+            this.tbLog.Size = new System.Drawing.Size(733, 74);
+            this.tbLog.TabIndex = 5;
             this.tbLog.TabStop = false;
+            // 
+            // tableLayoutPanel1
+            // 
+            this.tableLayoutPanel1.ColumnCount = 2;
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
+            this.tableLayoutPanel1.Controls.Add(this.LBUsersList, 0, 0);
+            this.tableLayoutPanel1.Controls.Add(this.CLBKeys, 1, 0);
+            this.tableLayoutPanel1.Controls.Add(this.tbLog, 0, 1);
+            this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.tableLayoutPanel1.Location = new System.Drawing.Point(0, 0);
+            this.tableLayoutPanel1.Name = "tableLayoutPanel1";
+            this.tableLayoutPanel1.RowCount = 2;
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F));
+            this.tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 80F));
+            this.tableLayoutPanel1.Size = new System.Drawing.Size(739, 389);
+            this.tableLayoutPanel1.TabIndex = 6;
+            // 
+            // CLBKeys
+            // 
+            this.CLBKeys.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.CLBKeys.FormattingEnabled = true;
+            this.CLBKeys.IntegralHeight = false;
+            this.CLBKeys.Location = new System.Drawing.Point(372, 3);
+            this.CLBKeys.Name = "CLBKeys";
+            this.CLBKeys.ScrollAlwaysVisible = true;
+            this.CLBKeys.Size = new System.Drawing.Size(364, 303);
+            this.CLBKeys.TabIndex = 4;
+            this.CLBKeys.ItemCheck += new System.Windows.Forms.ItemCheckEventHandler(this.CLBKeys_ItemCheck);
+            this.CLBKeys.Click += new System.EventHandler(this.CLBKeys_Click);
+            this.CLBKeys.SelectedIndexChanged += new System.EventHandler(this.CLBKeys_SelectedIndexChanged);
+            this.CLBKeys.SelectedValueChanged += new System.EventHandler(this.CLBKeys_SelectedValueChanged);
+            this.CLBKeys.DoubleClick += new System.EventHandler(this.CLBKeys_DoubleClick);
+            // 
+            // saveFileDialog1
+            // 
+            this.saveFileDialog1.DefaultExt = "reg";
+            this.saveFileDialog1.FileName = "export";
+            this.saveFileDialog1.Filter = "(*.reg)|*.reg";
+            this.saveFileDialog1.Title = "Выберите файл для сохранения.";
+            // 
+            // openLogToolStripMenuItem
+            // 
+            this.openLogToolStripMenuItem.Name = "openLogToolStripMenuItem";
+            this.openLogToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.openLogToolStripMenuItem.Text = "Открыть лог";
+            this.openLogToolStripMenuItem.Click += new System.EventHandler(this.openLogToolStripMenuItem_Click);
             // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(754, 411);
-            this.Controls.Add(this.tbLog);
+            this.ClientSize = new System.Drawing.Size(739, 411);
+            this.Controls.Add(this.tableLayoutPanel1);
             this.Controls.Add(this.statusStrip1);
-            this.Controls.Add(this.CLBKeys);
-            this.Controls.Add(this.LBUsersList);
-            this.MinimumSize = new System.Drawing.Size(770, 450);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
+            this.MinimumSize = new System.Drawing.Size(755, 450);
             this.Name = "Form1";
             this.Text = "CPKeysManager";
             this.Load += new System.EventHandler(this.Form1_Load);
+            this.Shown += new System.EventHandler(this.Form1_Shown);
+            this.ResizeEnd += new System.EventHandler(this.Form1_ResizeEnd);
+            this.MouseDoubleClick += new System.Windows.Forms.MouseEventHandler(this.Form1_MouseDoubleClick);
+            this.Resize += new System.EventHandler(this.Form1_Resize);
             this.statusStrip1.ResumeLayout(false);
             this.statusStrip1.PerformLayout();
+            this.tableLayoutPanel1.ResumeLayout(false);
+            this.tableLayoutPanel1.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
         }
 
         #endregion
-
-        private System.Windows.Forms.ListBox LBUsersList;
-        private System.Windows.Forms.CheckedListBox CLBKeys;
         private System.Windows.Forms.StatusStrip statusStrip1;
         private System.Windows.Forms.ToolStripStatusLabel tssl1;
         private System.Windows.Forms.ToolStripDropDownButton toolStripDropDownButton1;
@@ -237,13 +296,19 @@
         private System.Windows.Forms.ToolStripMenuItem mbCopy;
         private System.Windows.Forms.ToolStripMenuItem mbSelectAll;
         private System.Windows.Forms.ToolStripMenuItem mbUnselectAll;
-        private System.Windows.Forms.ToolStripMenuItem mbInstallCerts;
+        private System.Windows.Forms.ToolStripMenuItem mbExport;
         private System.Windows.Forms.ToolStripMenuItem mbFilter;
         private System.Windows.Forms.ToolStripTextBox ttbFilter;
         private System.Windows.Forms.ToolStripMenuItem mbSelectFilter;
         private System.Windows.Forms.ToolStripMenuItem mbOpenFilterContext;
         private System.Windows.Forms.ToolStripMenuItem mbDelete;
+        private System.Windows.Forms.ListBox LBUsersList;
+        public UserCheckedListBox CLBKeys;
         private System.Windows.Forms.TextBox tbLog;
+        public System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
+        private System.Windows.Forms.SaveFileDialog saveFileDialog1;
+        private System.Windows.Forms.ToolStripStatusLabel tssl2;
+        private System.Windows.Forms.ToolStripMenuItem openLogToolStripMenuItem;
     }
 }
 

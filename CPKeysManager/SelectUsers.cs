@@ -1,11 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace CPKeysManager
@@ -29,7 +22,7 @@ namespace CPKeysManager
 
             foreach(var item in UsersList)
             {
-                if (i != SelectedUser && Action == 0)
+                if (/*i != SelectedUser && */Action == 0)
                 {
                     clbUsers.Items.Add(item);
                 }
@@ -53,7 +46,17 @@ namespace CPKeysManager
             try
             {
                 if (clbUsers.CheckedItems.Count > 0)
+                {
                     cpkmDataExchange.cpkmvSelectedUsers = clbUsers.CheckedItems;
+                    if (checkBox1.Checked)
+                    {
+                        cpkmDataExchange.cpkmvForceReinstallCerts = true;
+                    }
+                    else
+                    {
+                        cpkmDataExchange.cpkmvForceReinstallCerts = false;
+                    }
+                }
             }
             catch
             {

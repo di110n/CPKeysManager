@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.ComponentModel;
-using System.Data;
-using System.Drawing;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Forms;
 using Microsoft.Win32;
 using System.Text.RegularExpressions;
-using System.Threading;
-
+using System.IO;
+using System.Text;
+using System.Drawing;
 
 namespace CPKeysManager
 {
@@ -19,6 +15,10 @@ namespace CPKeysManager
     {
 
         public Dictionary<string, string> usersList = new Dictionary<string, string>();
+        public Dictionary<string, string> uPathList = new Dictionary<string, string>();
+        public static CheckedListBox CLBKeysCopy = new CheckedListBox();
+        public bool ic = false;
+        
         //public ListBox.ObjectCollection SelectedUsers;
 
         public Form1()
@@ -82,6 +82,26 @@ namespace CPKeysManager
             return result;
         }
 
+        private string getUserPath(string usersUid)
+        {
+            string result = null;
+
+            if (!usersUid.Contains(CPKMConfig.keyFilter))
+                return result;
+            try
+            {
+                result = null;
+                RegistryKey rkUsers = Registry.LocalMachine.OpenSubKey($"{CPKMConfig.baseUKey}\\{usersUid}");
+                result = rkUsers.GetValue(CPKMConfig.piKey).ToString();
+            }
+            catch
+            {
+                result = null;
+            }
+
+            return result;
+        }
+
         private void formReload()
         {
             LBUsersList.Items.Clear();
@@ -92,15 +112,19 @@ namespace CPKeysManager
             string[] usersUids = getUsersUidList();
 
             string udName = null;
+            string uPath = null;
 
             foreach (string item in usersUids)
             {
                 udName = getUserName(item);
-                if (udName!=null)
+                uPath = getUserPath(item);
+                if (uPath == null) continue;
+                if (udName!=null && Directory.Exists($@"{uPath}\AppData\Roaming\dln\cpci2"))
                 {
                     try
                     {
                         usersList.Add(udName, item);
+                        uPathList.Add(udName, $@"{uPath}\AppData\Roaming\dln\cpci2");
                     }
                     catch
                     {
@@ -164,6 +188,19 @@ namespace CPKeysManager
             return result;
         }
 
+        public static bool isclbElementChecked(int index)
+        {
+            try
+            {
+                return CLBKeysCopy.GetItemChecked(index);
+            }
+            catch
+            {
+                return false;
+            }
+
+        }
+
         /*////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////*/
 
         private void Form1_Load(object sender, EventArgs e)
@@ -183,6 +220,7 @@ namespace CPKeysManager
             {
                 //
             }
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
         }
 
         private void mbUpdate_Click(object sender, EventArgs e)
@@ -204,6 +242,7 @@ namespace CPKeysManager
             {
                 CLBKeys.SetItemChecked(i, false);
             }
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
         }
 
         private void ttbFilter_KeyPress(object sender, KeyPressEventArgs e)
@@ -243,6 +282,9 @@ namespace CPKeysManager
                 }
             }
 
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            CLBKeys.Refresh();
+
         }
 
         private void mbCopy_Click(object sender, EventArgs e)
@@ -264,109 +306,281 @@ namespace CPKeysManager
                 return;
             }
 
-            /*while (cpkmDataExchange.cpkmvSelectedUsers.Count == 0)
+            this.Enabled = false;
+
+            cpKeyReg cpKey = new cpKeyReg(null, null);
+            List<string> data = new List<string>();
+
+            data.Add("Windows Registry Editor Version 5.00");
+            data.Add("");
+            data.Add($@"[HKEY_LOCAL_MACHINE\{CPKMConfig.baseCPKey}\{usersList[LBUsersList.SelectedItem.ToString()]}\{CPKMConfig.baseCPKKey}]");
+            data.Add("");
+            try
             {
-                //whatever
-                Thread.Sleep(100);
-            }*/
-            int i = 0;
-            string vUser = null;
-            string pUser = null;
-            string[] tUser = { };
-            string rArgs = null;
-            string uKeyPath = null;
-            string oKeyPath = null;
-            bool chkIfKeyEx = false;
+                foreach (var ikey in CLBKeys.CheckedItems)
+                {
+                    cpKey.keyname = ikey.ToString();
+                    cpKey.sid = usersList[LBUsersList.SelectedItem.ToString()];
+                    data.AddRange(cpKey.getKey().ToList());
+                }
+            }
+            catch(Exception ex)
+            {
+                tbLog.AppendText($"Ошибка экспорта контейнера! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+            }
+            try
+            {
+                File.WriteAllLines("tmpinput.reg", data.ToArray(), Encoding.Unicode);
+            }
+            catch
+            {
+                tbLog.AppendText("Ошибка записи tmpinput.reg");
+            }
+
+            if (File.Exists("tmpinput.reg"))
+            {
+                try
+                {
+                    foreach (var item in cpkmDataExchange.cpkmvSelectedUsers)
+                    {
+                        File.Copy("tmpinput.reg", $@"{uPathList[item.ToString()]}\input.reg");
+                        if (cpkmDataExchange.cpkmvForceReinstallCerts)
+                        {
+                            File.Delete($@"{uPathList[item.ToString()]}\cpKey.list");
+                        }
+                    }
+                    File.Delete("tmpinput.reg");
+                }
+                catch(Exception ex)
+                {
+                    tbLog.AppendText($"Ошибка копирования input.reg! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+                }
+            }
+            cpkmDataExchange.cpkmvSelectedUsers = null;
+            cpkmDataExchange.cpkmvForceReinstallCerts = false;
+            this.Enabled = true;
+
+            tbLog.AppendText($"{CPKMStrings.txtDone}\r\n");
+        }
+
+        private void Form1_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            //ActiveForm.Visible = false;
+        }
+
+        private void resizeElements()
+        {
+            /*
+            LBUsersList.Top = 12;
+            LBUsersList.Left = 12;
+            CLBKeys.Top = 12;
+            CLBKeys.Left = LBUsersList.Right + 12;
+
+            LBUsersList.Width = (ActiveForm.Width / 2) - 36;
+            CLBKeys.Width = tbLog.Right - CLBKeys.Left;
+
+            LBUsersList.Height = tbLog.Top - LBUsersList.Top - 8;
+            CLBKeys.Height = LBUsersList.Height;
+            */
+        }
+
+        private void Form1_Shown(object sender, EventArgs e)
+        {
+            resizeElements();
+        }
+
+        private void Form1_Resize(object sender, EventArgs e)
+        {
+            resizeElements();
+        }
+
+        private void Form1_ResizeEnd(object sender, EventArgs e)
+        {
+            resizeElements();
+        }
+
+        private void CLBKeys_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+        }
+
+        private void CLBKeys_SelectedValueChanged(object sender, EventArgs e)
+        {
+            if (ic)
+            {
+                CLBKeysCopy = CLBKeys;
+                CLBKeys.Refresh();
+                ic = !ic;
+            }
+        }
+
+        private void CLBKeys_ItemCheck(object sender, ItemCheckEventArgs e)
+        {
+            ic = true;
+        }
+
+        private void mbDelete_Click(object sender, EventArgs e)
+        {
+            if (CLBKeys.CheckedItems.Count <= 0)
+            {
+                MessageBox.Show($"Не выбраны контейнеры!", "Внимание!",MessageBoxButtons.OK,MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (MessageBox.Show($"Вы уверены. что хотите удалить отмеченные контейнеры?\r\n{CLBKeys.CheckedItems.Count} шт.\r\nЭту операцию нельзя отменить!", 
+                "Внимание!",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning) == DialogResult.No)
+            {
+                tbLog.AppendText($"Операция отменена.\r\n");
+                return;
+            }
+                
+
+            foreach (var ikey in CLBKeys.CheckedItems)
+            {
+                try
+                {
+                    Registry.LocalMachine.DeleteSubKey($@"{CPKMConfig.baseCPKey}\{usersList[LBUsersList.Text]}\{CPKMConfig.baseCPKKey}\{ikey.ToString()}");
+                }
+                catch
+                {
+                    tbLog.AppendText($"Ошибка во время удаления контейнера {ikey.ToString()}\r\n");
+                }
+            }
+
+            LBUsersList_SelectedIndexChanged(this, EventArgs.Empty);
+            tbLog.AppendText($"{CPKMStrings.txtDone}\r\n");
+        }
+
+        private void mbExport_Click(object sender, EventArgs e)
+        {
+            if (saveFileDialog1.ShowDialog() == DialogResult.Cancel) return;
+            string expath = saveFileDialog1.FileName;
+
+            if (CLBKeys.CheckedItems.Count <= 0)
+            {
+                tbLog.AppendText($"{CPKMStrings.txtErrNoKeysToAction}\r\n");
+                return;
+            }
+
+            this.Enabled = false;
+
+            cpKeyReg cpKey = new cpKeyReg(null, null);
+            List<string> data = new List<string>();
+
+            data.Add("Windows Registry Editor Version 5.00");
+            data.Add("");
+            data.Add($@"[HKEY_LOCAL_MACHINE\{CPKMConfig.baseCPKey}\{usersList[LBUsersList.SelectedItem.ToString()]}\{CPKMConfig.baseCPKKey}]");
+            data.Add("");
+            try
+            {
+                foreach (var ikey in CLBKeys.CheckedItems)
+                {
+                    cpKey.keyname = ikey.ToString();
+                    cpKey.sid = usersList[LBUsersList.SelectedItem.ToString()];
+                    data.AddRange(cpKey.getKey().ToList());
+                }
+            }
+            catch (Exception ex)
+            {
+                tbLog.AppendText($"Ошибка экспорта контейнера! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+            }
+
+            //////////
 
             try
             {
-                foreach (var item in cpkmDataExchange.cpkmvSelectedUsers)
-                {
-                    if (item.ToString().IndexOf('@')<0)
-                    {
-                        tbLog.AppendText($"{CPKMStrings.txtUser} {item} {CPKMStrings.txtMsgNotSignedIn}\r\n");
-
-                        //here is copying code for NOT signed in users
-
-                        continue;
-                    }
-
-                    foreach (var ikey in CLBKeys.CheckedItems)
-                    {
-                        tUser = item.ToString().Split('@');
-                        vUser = $"{tUser[1]}\\{tUser[0]}";
-                        pUser = tUser[0];
-                        tbLog.AppendText($"{CPKMStrings.txtMsgCopyKeysForUser} {vUser} <-- {ikey}\r\n");
-                        uKeyPath = $"{CPKMConfig.baseCPKey}\\{usersList[item.ToString()]}\\{CPKMConfig.baseCPKKey}\\{ikey}";
-                        oKeyPath = $"{CPKMConfig.baseCPKey}\\{usersList[LBUsersList.Text]}\\{CPKMConfig.baseCPKKey}\\{ikey}";
-
-                        //here is copying code for signeb in users
-
-                        //Creating registry key for a container
-                        rArgs = $"/create /RU {vUser} /IT /TN keyCreateFor_{pUser} /TR \"reg.exe ADD \'HKLM\\{uKeyPath}\'\" /SC DAILY /F";
-                        System.Diagnostics.Process psSch = new System.Diagnostics.Process();
-                        psSch.StartInfo.FileName = CPKMConfig.pathSchtasks;
-                        psSch.StartInfo.Arguments = rArgs;
-                        psSch.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        psSch.Start();
-                        psSch.WaitForExit();
-                        /*rArgs = $"/run /TN keyCreateFor_{pUser}";
-                        psSch.StartInfo.Arguments = rArgs;
-                        psSch.Start();
-                        psSch.WaitForExit();
-                        rArgs = $"/Delete /TN keyCreateFor_{pUser} /F";
-                        psSch.StartInfo.Arguments = rArgs;
-                        psSch.Start();
-                        psSch.WaitForExit();*/
-                        psSch.Dispose();
-                        ///////////////////////////
-
-                        //Checking if the key created at the previous step is exists
-                        chkIfKeyEx = false;
-                        chkIfKeyEx = checkIfKeyIsExistsHKLM(uKeyPath);
-                        if (!chkIfKeyEx)
-                        {
-                            //tbLog.AppendText($"{CPKMStrings.txtErrNoRegistryPath} {Registry.LocalMachine.Name}\\{uKeyPath}\r\n");
-                            //continue;
-                        }
-                        else if (checkIfKeyIsExistsHKLM(uKeyPath))
-                        {
-                            //tbLog.AppendText($"OK\r\n");
-                        }
-                        ///////////////////////////
-
-                        //Copying the container
-                        /*System.Diagnostics.Process psReg = new System.Diagnostics.Process();
-                        psReg.StartInfo.FileName = CPKMConfig.pathReg;
-                        rArgs = $"copy \"HKLM\\{oKeyPath}\" \"HKLM\\{uKeyPath}\" /s /f";
-                        psReg.StartInfo.Arguments = rArgs;
-                        psReg.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                        psReg.Start();
-                        psReg.WaitForExit();
-                        psReg.Dispose();*/
-                        ///////////////////////////
-                        
-                        
-                        //reg copy "HKLM\SOFTWARE\WOW6432Node\Crypto Pro\Settings\Users\S-1-5-21-908165884-950078525-27604
-                        //64006 - 1001\Keys\2018 - 01 - 15 12 - 09 - 38 ООО ВОСТСИБДОБЫЧА" "HKLM\SOFTWARE\WOW6432Node\Crypto Pro\Settings\Users\S - 1 - 5 - 21 - 908
-                        //165884 - 950078525 - 2760464006 - 1002\Keys\2018 - 01 - 15 12 - 09 - 38 ООО ВОСТСИБДОБЫЧА" /s /f
-                    }
-
-                    i++;
-                }
-                /*tbLog.AppendText("Запускаем блокнот\r\n");
-                System.Diagnostics.Process notepad = new System.Diagnostics.Process();
-                notepad.StartInfo.FileName = "notepad.exe";
-                notepad.StartInfo.Arguments = "";
-                notepad.Start();
-                notepad.WaitForExit();
-                notepad.Dispose();*/
+                File.WriteAllLines(expath, data.ToArray(), Encoding.Unicode);
             }
-            finally
+            catch
             {
-                //
+                tbLog.AppendText($"Ошибка записи {expath}");
             }
+
+            this.Enabled = true;
+
             tbLog.AppendText($"{CPKMStrings.txtDone}\r\n");
+        }
+
+        private void CLBKeys_Click(object sender, EventArgs e)
+        {
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+        }
+
+        private void CLBKeys_DoubleClick(object sender, EventArgs e)
+        {
+            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+        }
+
+        private void openLogToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            //
+            Process ps = new Process();
+            ps.StartInfo.FileName = $@"{Environment.GetEnvironmentVariable("WINDIR")}\notepad.exe";
+            ps.StartInfo.Arguments = $"{uPathList[LBUsersList.Text]}\\cpci2.log";
+            ps.StartInfo.WindowStyle = ProcessWindowStyle.Normal;
+            ps.Start();
+            ps.WaitForExit();
+            ps.Dispose();
+        }
+    }
+
+    public class UserCheckedListBox : CheckedListBox
+    {
+        protected override void OnDrawItem(DrawItemEventArgs e)
+        {
+            base.OnDrawItem(e);
+            
+            if (Form1.isclbElementChecked(e.Index))
+            {
+                DrawItemEventArgs e2 = new DrawItemEventArgs(e.Graphics, e.Font, e.Bounds, e.Index, e.State, e.ForeColor, Color.LightGray/*e.BackColor*/);
+                base.OnDrawItem(e2);
+            }
+        }
+    }
+
+    public class cpKeyReg
+    {
+        public string keyname { get; set; }
+        public string sid { get; set; }
+
+        public cpKeyReg(string keyname, string sid)
+        {
+            this.keyname = keyname;
+            this.sid = sid;
+        }
+
+        public string[] getKey()
+        {
+            string[] res = { };
+
+            //RegistryKey key = Registry.LocalMachine.OpenSubKey($@"{CPKMConfig.baseCPKey}\{sid}\{CPKMConfig.baseCPKKey}");
+            Process ps = new Process();
+            ps.StartInfo.FileName = $@"{Environment.GetEnvironmentVariable("WINDIR")}\system32\reg.exe";
+            ps.StartInfo.Arguments = $"export \"HKLM\\{CPKMConfig.baseCPKey}\\{sid}\\{CPKMConfig.baseCPKKey}\\{keyname}\" \"{Application.StartupPath}\\tmp.dat\" /y";
+            ps.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+            ps.Start();
+            ps.WaitForExit();
+            ps.Dispose();
+
+            if (File.Exists($@"{Application.StartupPath}\tmp.dat"))
+            {
+                List<string> tlistorig = File.ReadAllLines($@"{Application.StartupPath}\tmp.dat", Encoding.Unicode).ToList();
+                List<string> tlistmod = File.ReadAllLines($@"{Application.StartupPath}\tmp.dat", Encoding.Unicode).ToList();
+                foreach (string item in tlistorig)
+                {
+                    if (item.Contains(keyname) && item.Contains(sid)) break;
+                    tlistmod.Remove(item);
+                }
+                if (tlistmod.Count > 0)
+                {
+                    res = tlistmod.ToArray();
+                }
+                File.Delete($@"{Application.StartupPath}\tmp.dat");
+            }
+
+            return res;
         }
     }
 }
