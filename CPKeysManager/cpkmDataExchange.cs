@@ -13,6 +13,7 @@ namespace CPKeysManager
         public static CheckedListBox.CheckedItemCollection cpkmvSelectedUsers = null;
         public static int cpkmvTestInt = 0;
         public static bool cpkmvForceReinstallCerts = false;
+        public static string[] searchResult = { };
 
     }
 }

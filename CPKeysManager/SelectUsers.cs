@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace CPKeysManager
 {
@@ -96,6 +98,21 @@ namespace CPKeysManager
             else
             {
                 for (int i = 0; i < clbUsers.Items.Count; i++)
+                {
+                    clbUsers.SetItemChecked(i, true);
+                }
+            }
+        }
+
+        private void button4_Click(object sender, EventArgs e)
+        {
+            for (int i = 0; i < clbUsers.Items.Count; i++)
+            {
+                clbUsers.SetItemChecked(i, false);
+            }
+            for (int i = 0; i < clbUsers.Items.Count; i++)
+            {
+                if (cpkmDataExchange.searchResult.AsQueryable().Contains(clbUsers.Items[i]))
                 {
                     clbUsers.SetItemChecked(i, true);
                 }

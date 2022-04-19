@@ -32,11 +32,15 @@
             this.statusStrip1 = new System.Windows.Forms.StatusStrip();
             this.toolStripDropDownButton1 = new System.Windows.Forms.ToolStripDropDownButton();
             this.mbUpdate = new System.Windows.Forms.ToolStripMenuItem();
+            this.openLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.mbOpenFilterContext = new System.Windows.Forms.ToolStripMenuItem();
             this.tssl1 = new System.Windows.Forms.ToolStripStatusLabel();
             this.toolStripDropDownButton2 = new System.Windows.Forms.ToolStripDropDownButton();
             this.mbCopy = new System.Windows.Forms.ToolStripMenuItem();
             this.mbExport = new System.Windows.Forms.ToolStripMenuItem();
+            this.mbSearchContainers = new System.Windows.Forms.ToolStripMenuItem();
+            this.ttbSearchString = new System.Windows.Forms.ToolStripTextBox();
+            this.mbSearch = new System.Windows.Forms.ToolStripMenuItem();
             this.mbSelectAll = new System.Windows.Forms.ToolStripMenuItem();
             this.mbFilter = new System.Windows.Forms.ToolStripMenuItem();
             this.ttbFilter = new System.Windows.Forms.ToolStripTextBox();
@@ -49,7 +53,6 @@
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.CLBKeys = new CPKeysManager.UserCheckedListBox();
             this.saveFileDialog1 = new System.Windows.Forms.SaveFileDialog();
-            this.openLogToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.statusStrip1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
             this.SuspendLayout();
@@ -89,6 +92,13 @@
             this.mbUpdate.Text = "Обновить";
             this.mbUpdate.Click += new System.EventHandler(this.mbUpdate_Click);
             // 
+            // openLogToolStripMenuItem
+            // 
+            this.openLogToolStripMenuItem.Name = "openLogToolStripMenuItem";
+            this.openLogToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
+            this.openLogToolStripMenuItem.Text = "Открыть лог";
+            this.openLogToolStripMenuItem.Click += new System.EventHandler(this.openLogToolStripMenuItem_Click);
+            // 
             // mbOpenFilterContext
             // 
             this.mbOpenFilterContext.Name = "mbOpenFilterContext";
@@ -111,6 +121,7 @@
             this.toolStripDropDownButton2.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.mbCopy,
             this.mbExport,
+            this.mbSearchContainers,
             this.mbSelectAll,
             this.mbFilter,
             this.mbUnselectAll,
@@ -118,14 +129,14 @@
             this.toolStripDropDownButton2.Image = ((System.Drawing.Image)(resources.GetObject("toolStripDropDownButton2.Image")));
             this.toolStripDropDownButton2.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.toolStripDropDownButton2.Name = "toolStripDropDownButton2";
-            this.toolStripDropDownButton2.Size = new System.Drawing.Size(58, 20);
-            this.toolStripDropDownButton2.Text = "Ключи";
+            this.toolStripDropDownButton2.Size = new System.Drawing.Size(88, 20);
+            this.toolStripDropDownButton2.Text = "Контейнеры";
             // 
             // mbCopy
             // 
             this.mbCopy.Name = "mbCopy";
             this.mbCopy.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.C)));
-            this.mbCopy.Size = new System.Drawing.Size(274, 22);
+            this.mbCopy.Size = new System.Drawing.Size(277, 22);
             this.mbCopy.Text = "Копировать контейнеры";
             this.mbCopy.Click += new System.EventHandler(this.mbCopy_Click);
             // 
@@ -133,15 +144,36 @@
             // 
             this.mbExport.Name = "mbExport";
             this.mbExport.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.E)));
-            this.mbExport.Size = new System.Drawing.Size(274, 22);
+            this.mbExport.Size = new System.Drawing.Size(277, 22);
             this.mbExport.Text = "Экспорт контейнеров в файл";
             this.mbExport.Click += new System.EventHandler(this.mbExport_Click);
+            // 
+            // mbSearchContainers
+            // 
+            this.mbSearchContainers.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.ttbSearchString,
+            this.mbSearch});
+            this.mbSearchContainers.Name = "mbSearchContainers";
+            this.mbSearchContainers.Size = new System.Drawing.Size(277, 22);
+            this.mbSearchContainers.Text = "Поиск контейнеров у пользователей";
+            // 
+            // toolStripTextBox1
+            // 
+            this.ttbSearchString.Name = "ttbSearchString";
+            this.ttbSearchString.Size = new System.Drawing.Size(100, 23);
+            // 
+            // mbSearch
+            // 
+            this.mbSearch.Name = "mbSearch";
+            this.mbSearch.Size = new System.Drawing.Size(180, 22);
+            this.mbSearch.Text = "Поиск";
+            this.mbSearch.Click += new System.EventHandler(this.mbSearch_Click);
             // 
             // mbSelectAll
             // 
             this.mbSelectAll.Name = "mbSelectAll";
             this.mbSelectAll.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.A)));
-            this.mbSelectAll.Size = new System.Drawing.Size(274, 22);
+            this.mbSelectAll.Size = new System.Drawing.Size(277, 22);
             this.mbSelectAll.Text = "Выделить все контейнеры";
             this.mbSelectAll.Click += new System.EventHandler(this.mbSelectAll_Click);
             // 
@@ -151,7 +183,7 @@
             this.ttbFilter,
             this.mbSelectFilter});
             this.mbFilter.Name = "mbFilter";
-            this.mbFilter.Size = new System.Drawing.Size(274, 22);
+            this.mbFilter.Size = new System.Drawing.Size(277, 22);
             this.mbFilter.Text = "Выделить по фильтру";
             // 
             // ttbFilter
@@ -164,7 +196,7 @@
             // mbSelectFilter
             // 
             this.mbSelectFilter.Name = "mbSelectFilter";
-            this.mbSelectFilter.Size = new System.Drawing.Size(160, 22);
+            this.mbSelectFilter.Size = new System.Drawing.Size(180, 22);
             this.mbSelectFilter.Text = "Выделить";
             this.mbSelectFilter.Click += new System.EventHandler(this.mbSelectFilter_Click);
             // 
@@ -172,22 +204,22 @@
             // 
             this.mbUnselectAll.Name = "mbUnselectAll";
             this.mbUnselectAll.ShortcutKeys = ((System.Windows.Forms.Keys)((System.Windows.Forms.Keys.Control | System.Windows.Forms.Keys.U)));
-            this.mbUnselectAll.Size = new System.Drawing.Size(274, 22);
+            this.mbUnselectAll.Size = new System.Drawing.Size(277, 22);
             this.mbUnselectAll.Text = "Снять выделение";
             this.mbUnselectAll.Click += new System.EventHandler(this.mbUnselectAll_Click);
             // 
             // mbDelete
             // 
             this.mbDelete.Name = "mbDelete";
-            this.mbDelete.Size = new System.Drawing.Size(274, 22);
+            this.mbDelete.Size = new System.Drawing.Size(277, 22);
             this.mbDelete.Text = "Удалить отмеченные контейнеры";
             this.mbDelete.Click += new System.EventHandler(this.mbDelete_Click);
             // 
             // tssl2
             // 
             this.tssl2.Name = "tssl2";
-            this.tssl2.Size = new System.Drawing.Size(115, 17);
-            this.tssl2.Text = "Выбрано ключей: 0";
+            this.tssl2.Size = new System.Drawing.Size(143, 17);
+            this.tssl2.Text = "Выбрано контейнеров: 0";
             // 
             // LBUsersList
             // 
@@ -255,13 +287,6 @@
             this.saveFileDialog1.Filter = "(*.reg)|*.reg";
             this.saveFileDialog1.Title = "Выберите файл для сохранения.";
             // 
-            // openLogToolStripMenuItem
-            // 
-            this.openLogToolStripMenuItem.Name = "openLogToolStripMenuItem";
-            this.openLogToolStripMenuItem.Size = new System.Drawing.Size(205, 22);
-            this.openLogToolStripMenuItem.Text = "Открыть лог";
-            this.openLogToolStripMenuItem.Click += new System.EventHandler(this.openLogToolStripMenuItem_Click);
-            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -309,6 +334,9 @@
         private System.Windows.Forms.SaveFileDialog saveFileDialog1;
         private System.Windows.Forms.ToolStripStatusLabel tssl2;
         private System.Windows.Forms.ToolStripMenuItem openLogToolStripMenuItem;
+        private System.Windows.Forms.ToolStripMenuItem mbSearchContainers;
+        private System.Windows.Forms.ToolStripMenuItem mbSearch;
+        private System.Windows.Forms.ToolStripTextBox ttbSearchString;
     }
 }
 

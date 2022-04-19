@@ -220,7 +220,7 @@ namespace CPKeysManager
             {
                 //
             }
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
         }
 
         private void mbUpdate_Click(object sender, EventArgs e)
@@ -242,7 +242,7 @@ namespace CPKeysManager
             {
                 CLBKeys.SetItemChecked(i, false);
             }
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
         }
 
         private void ttbFilter_KeyPress(object sender, KeyPressEventArgs e)
@@ -282,13 +282,14 @@ namespace CPKeysManager
                 }
             }
 
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
             CLBKeys.Refresh();
 
         }
 
         private void mbCopy_Click(object sender, EventArgs e)
         {
+            tbLog.AppendText("Копирование контейнеров...\r\n");
             if (CLBKeys.CheckedItems.Count <= 0)
             {
                 tbLog.AppendText($"{CPKMStrings.txtErrNoKeysToAction}\r\n");
@@ -401,7 +402,8 @@ namespace CPKeysManager
 
         private void CLBKeys_SelectedIndexChanged(object sender, EventArgs e)
         {
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
+            ttbSearchString.Text = CLBKeys.SelectedItem.ToString();
         }
 
         private void CLBKeys_SelectedValueChanged(object sender, EventArgs e)
@@ -455,14 +457,23 @@ namespace CPKeysManager
 
         private void mbExport_Click(object sender, EventArgs e)
         {
-            if (saveFileDialog1.ShowDialog() == DialogResult.Cancel) return;
-            string expath = saveFileDialog1.FileName;
-
             if (CLBKeys.CheckedItems.Count <= 0)
             {
                 tbLog.AppendText($"{CPKMStrings.txtErrNoKeysToAction}\r\n");
                 return;
             }
+
+            if (CLBKeys.CheckedItems.Count == 1)
+            {
+                saveFileDialog1.FileName = CLBKeys.CheckedItems[0].ToString();
+            }
+            else
+            {
+                saveFileDialog1.FileName = "export";
+            }
+
+            if (saveFileDialog1.ShowDialog() == DialogResult.Cancel) return;
+            string expath = saveFileDialog1.FileName;
 
             this.Enabled = false;
 
@@ -505,12 +516,14 @@ namespace CPKeysManager
 
         private void CLBKeys_Click(object sender, EventArgs e)
         {
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
+            ttbSearchString.Text = CLBKeys.SelectedItem.ToString();
         }
 
         private void CLBKeys_DoubleClick(object sender, EventArgs e)
         {
-            tssl2.Text = $"Выбрано ключей: {CLBKeys.CheckedItems.Count.ToString()}";
+            tssl2.Text = $"{CPKMStrings.txtSelectedContainers} {CLBKeys.CheckedItems.Count.ToString()}";
+            ttbSearchString.Text = CLBKeys.SelectedItem.ToString();
         }
 
         private void openLogToolStripMenuItem_Click(object sender, EventArgs e)
@@ -523,6 +536,27 @@ namespace CPKeysManager
             ps.Start();
             ps.WaitForExit();
             ps.Dispose();
+        }
+
+        private void mbSearch_Click(object sender, EventArgs e)
+        {
+            string[] aSearchResult = { };
+            string[] containers = { };
+            foreach (var item in usersList)
+            {
+                containers = getUsersKeys(item.Value);
+                foreach (string container in containers)
+                {
+                    if (container.Contains(ttbSearchString.Text))
+                    {
+                        aSearchResult = aSearchResult.Concat(new string[] { item.Key }).ToArray();
+                        tbLog.AppendText($"\"{ttbSearchString.Text}\" найден у пользователя {item.Key}\r\n");
+                        break;
+                    }
+                }
+            }
+            cpkmDataExchange.searchResult = aSearchResult;
+            tbLog.AppendText("Результаты поиска сохранены.\r\n");
         }
     }
 

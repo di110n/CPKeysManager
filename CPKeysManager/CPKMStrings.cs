@@ -25,6 +25,7 @@ namespace CPKeysManager
         public const string txtDone = "Готово!";
         public const string txtUser = "пользователь";
         public const string txtMsgNotSignedIn = "не вошел в систему";
+        public const string txtSelectedContainers = "Выбрано контейнеров:";
 
         public const string txtError = "ОШИБКА";
         public const string txtSuccess = "УСПЕШНО";

@@ -21,6 +21,7 @@ namespace CPKeysManager
         public const string dnKey = @"USERDOMAIN";
 
         public const string pathCsptest = @"C:\Program Files\Crypto Pro\CSP\csptest.exe";
+        public const string pathCertmgr = @"C:\Program Files\Crypto Pro\CSP\certmgr.exe";
         public const string pathReg = @"reg.exe";
         public const string pathSchtasks = @"schtasks.exe";
 
