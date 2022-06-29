@@ -340,21 +340,51 @@ namespace CPKeysManager
 
             if (File.Exists("tmpinput.reg"))
             {
-                try
+                foreach (var item in cpkmDataExchange.cpkmvSelectedUsers)
                 {
-                    foreach (var item in cpkmDataExchange.cpkmvSelectedUsers)
+                    if (File.Exists($@"{uPathList[item.ToString()]}\input.reg"))
                     {
-                        File.Copy("tmpinput.reg", $@"{uPathList[item.ToString()]}\input.reg");
-                        if (cpkmDataExchange.cpkmvForceReinstallCerts)
+                        data.RemoveRange(0, 4);
+                        try
+                        {
+                            File.AppendAllLines($@"{uPathList[item.ToString()]}\input.reg", data, Encoding.Unicode);
+                        }
+                        catch (Exception ex)
+                        {
+                            tbLog.AppendText($"Ошибка добавления данных в input.reg! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+                        }
+                    }
+                    else
+                    {
+                        try
+                        {
+                            File.Copy("tmpinput.reg", $@"{uPathList[item.ToString()]}\input.reg");
+                        }
+                        catch (Exception ex)
+                        {
+                            tbLog.AppendText($"Ошибка копирования в input.reg! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+                        }
+                    }
+
+                    if (cpkmDataExchange.cpkmvForceReinstallCerts)
+                    {
+                        try
                         {
                             File.Delete($@"{uPathList[item.ToString()]}\cpKey.list");
                         }
+                        catch (Exception ex)
+                        {
+                            tbLog.AppendText($"Ошибка удаления cpKey.list! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+                        }
                     }
+                }
+                try
+                {
                     File.Delete("tmpinput.reg");
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
-                    tbLog.AppendText($"Ошибка копирования input.reg! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
+                    tbLog.AppendText($"Ошибка удаления tmpinput.reg! Детали:\r\n{ex.Source}\r\n{ex.TargetSite}\r\n{ex.Message}\r\n");
                 }
             }
             cpkmDataExchange.cpkmvSelectedUsers = null;
